@@ -102,8 +102,9 @@ mat2py_convert_float(double value)
 static PyObject *
 mat2py_convert_unsignedlonglong(unsigned long long value)
 {
-  PyObject * pything = PyLong_FromUnsignedLongLong(value); // new reference
-  PyObject * try_int = PyNumber_Int(pything); // new reference
+  // these both make new references
+  PyObject * pything = PyLong_FromUnsignedLongLong(value);
+  PyObject * try_int = PyNumber_Int(pything);
   if (try_int == NULL) {
     return pything;
   } else {
@@ -115,8 +116,9 @@ mat2py_convert_unsignedlonglong(unsigned long long value)
 static PyObject *
 mat2py_convert_longlong(long long value)
 {
-  PyObject * pything = PyLong_FromLongLong(value); // new reference
-  PyObject * try_int = PyNumber_Int(pything); // new reference
+  // these both make new references
+  PyObject * pything = PyLong_FromLongLong(value);
+  PyObject * try_int = PyNumber_Int(pything);
   if (try_int == NULL) {
     return pything;
   } else {
@@ -177,30 +179,35 @@ mat2py_helper2(const mxArray * const matthing,
     // this is a N by M
     if (dims[0] == 1 && dims[1] == 1) {
       // don't make a sequence, this is just 1 element
-      pything = converter_func(accessor_func(matthing, offset)); // new reference
+      // this should make a new reference
+      pything = converter_func(accessor_func(matthing, offset));
     } else if (dims[0] == 1 || dims[1] == 1) {
       // make just one sequence, this is a 1 by N
       size_t len = dims[0] * dims[1];
-      pything = PyTuple_New(len); // new reference
+      // new reference
+      pything = PyTuple_New(len);
       for (size_t i = 0; i < len; i++) {
-        PyObject * item = converter_func(accessor_func(matthing, offset + i)); // new reference
+        // new reference
+        PyObject * item = converter_func(accessor_func(matthing, offset + i));
         // TODO check for NULL?
-        PyTuple_SetItem(pything, i, item); // steals reference
+        // steals reference
+        PyTuple_SetItem(pything, i, item);
       }
     } else {
-      // this is a real N by M
-      pything = PyTuple_New(dims[0]); // new reference
+      // this is a real N by M, new reference
+      pything = PyTuple_New(dims[0]);
       for (size_t i = 0; i < dims[0]; i++) {
-        // build a sub tuple
-        PyObject * subtuple = PyTuple_New(dims[1]); // new reference
+        // build a sub tuple, new reference
+        PyObject * subtuple = PyTuple_New(dims[1]);
         for (size_t j = 0; j < dims[1]; j++) {
-          // remember that matlab is colomn major
-          PyObject * item = converter_func(accessor_func(matthing, offset + i + dims[0] * j)); // new reference
+          // new reference, remember that matlab is colomn major
+          PyObject * item = converter_func(accessor_func(matthing, offset + i + dims[0] * j));
           // TODO check for NULL?
-          PyTuple_SetItem(subtuple, j, item); // steals reference
+          // steals reference
+          PyTuple_SetItem(subtuple, j, item);
         }
-        // add it to the big tuple
-        PyTuple_SetItem(pything, i, subtuple); // steals reference
+        // add it to the big tuple, steals reference
+        PyTuple_SetItem(pything, i, subtuple);
       }
     }
   } else if (num_dims - level > 2) {
@@ -213,9 +220,11 @@ mat2py_helper2(const mxArray * const matthing,
     size_t len = dims[num_dims - level - 1];
     pything = PyTuple_New(len);
     for (size_t i = 0; i < len; i++) {
-      // recurse using the new offset
-      PyObject * item = mat2py_helper2(matthing, converter_func, accessor_func, level + 1, new_offset * i + offset, false); // new reference
-      PyTuple_SetItem(pything, i, item); // steals reference
+      // recurse using the new offset, returns new reference
+      PyObject * item = mat2py_helper2(matthing, converter_func, accessor_func, level + 1,
+                                       new_offset * i + offset, false);
+      // steals reference
+      PyTuple_SetItem(pything, i, item);
     }
   } else {
     // this shouldn't be possible
@@ -243,40 +252,52 @@ mat2py(const mxArray * const matthing)
     mwSize num_dims = mxGetNumberOfDimensions(matthing);
     mwSize * dims = (mwSize *) mxGetDimensions(matthing);
     // this is numeric, but what kind?
+    // mat2py_helper2 returns new reference
     if (mxIsDouble(matthing)) {
       double * data = (double *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_float, mat2py_numeric_accessor<double>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_float,
+                               mat2py_numeric_accessor<double>);
     } else if (mxIsSingle(matthing)) {
       float * data = (float *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_float, mat2py_numeric_accessor<float>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_float,
+                               mat2py_numeric_accessor<float>);
     } else if (mxIsInt64(matthing)) {
       int64_t * data = (int64_t *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_longlong, mat2py_numeric_accessor<int64_t>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_longlong,
+                               mat2py_numeric_accessor<int64_t>);
     } else if (mxIsUint64(matthing)) {
       uint64_t * data = (uint64_t *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_unsignedlonglong, mat2py_numeric_accessor<uint64_t>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_unsignedlonglong,
+                               mat2py_numeric_accessor<uint64_t>);
     } else if (mxIsInt32(matthing)) {
       int32_t * data = (int32_t *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_longlong, mat2py_numeric_accessor<int32_t>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_longlong,
+                               mat2py_numeric_accessor<int32_t>);
     } else if (mxIsUint32(matthing)) {
       uint32_t * data = (uint32_t *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_longlong, mat2py_numeric_accessor<uint32_t>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_longlong,
+                               mat2py_numeric_accessor<uint32_t>);
     } else if (mxIsInt16(matthing)) {
       int16_t * data = (int16_t *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_longlong, mat2py_numeric_accessor<int16_t>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_longlong,
+                               mat2py_numeric_accessor<int16_t>);
     } else if (mxIsUint16(matthing)) {
       uint16_t * data = (uint16_t *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_longlong, mat2py_numeric_accessor<uint16_t>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_longlong,
+                               mat2py_numeric_accessor<uint16_t>);
     } else if (mxIsInt8(matthing)) {
       int8_t * data = (int8_t *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_longlong, mat2py_numeric_accessor<int8_t>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_longlong,
+                               mat2py_numeric_accessor<int8_t>);
     } else if (mxIsUint8(matthing)) {
       uint8_t * data = (uint8_t *) mxGetData(matthing);
-      pything = mat2py_helper2(matthing, mat2py_convert_longlong, mat2py_numeric_accessor<uint8_t>); // new reference
+      pything = mat2py_helper2(matthing, mat2py_convert_longlong,
+                               mat2py_numeric_accessor<uint8_t>);
     }
   } else if (mxIsChar(matthing)) {
     // flat strings only please
-    if (mxGetNumberOfDimensions(matthing) != 2 || (mxGetDimensions(matthing)[0] != 1 && mxGetDimensions(matthing)[1] != 1)) {
+    if (mxGetNumberOfDimensions(matthing) != 2 ||
+        (mxGetDimensions(matthing)[0] != 1 && mxGetDimensions(matthing)[1] != 1)) {
       PyErr_SetString(matlab_error, "only flat strings are allowed");
       return NULL;
     }
@@ -287,10 +308,12 @@ mat2py(const mxArray * const matthing)
       PyErr_SetString(matlab_error, "could not read string");
       return NULL;
     }
-    pything = PyString_FromString(str.c_str()); // new reference
+    // new reference
+    pything = PyString_FromString(str.c_str());
   } else if (mxIsCell(matthing)) {
     // use this function as the conveter function, since cells can contain anything
-    pything = mat2py_helper2(matthing, mat2py, mat2py_cell_accessor); // new reference
+    // returns a new reference
+    pything = mat2py_helper2(matthing, mat2py, mat2py_cell_accessor);
   } else if (mxIsStruct(matthing)) {
     PyErr_SetString(matlab_error, "not implemented");
     return NULL;
@@ -300,14 +323,15 @@ mat2py(const mxArray * const matthing)
     return NULL;
   }
 
-  return pything; // return the new reference
+  // return the new reference
+  return pything;
 }
 
 static PyObject *
 matlab_pull(PyObject * self, PyObject * args)
 {
-  // get the list
-  PyObject * fast_args = PySequence_Fast(args, "matlab_import fast args"); // new reference
+  // get the list, new reference
+  PyObject * fast_args = PySequence_Fast(args, "matlab_import fast args");
   size_t size_args = PySequence_Fast_GET_SIZE(fast_args);
 
   // check for no input
@@ -324,8 +348,8 @@ matlab_pull(PyObject * self, PyObject * args)
   PyObject * new_super_tuple = PyTuple_New(size_args);
 
   for (size_t i = 0; i < size_args; i++) {
-    // get the item
-    PyObject * object_name = PySequence_Fast_GET_ITEM(fast_args, i); // borrowed reference
+    // get the item, borrowed reference
+    PyObject * object_name = PySequence_Fast_GET_ITEM(fast_args, i);
     if (object_name == NULL || !PyString_CheckExact(object_name)) {
       PyErr_SetString(PyExc_TypeError, "variable names must be strings");
       return NULL;
@@ -347,9 +371,10 @@ matlab_pull(PyObject * self, PyObject * args)
       return NULL;
     }
 
-    // convert the value and stuff it
-    PyObject * pything = mat2py(matthing); // new reference
-    PyTuple_SetItem(new_super_tuple, i, pything); // steals reference
+    // convert the value and stuff it, new reference
+    PyObject * pything = mat2py(matthing);
+    // steals reference
+    PyTuple_SetItem(new_super_tuple, i, pything);
   }
 
   // if there is only one thing, just return that
@@ -372,7 +397,6 @@ recursive_matlab_fill(PyObject * object,
   }
 
   if (num_dims == 2) {
-
     // fill the terminal values
     for (size_t i = 0; i < dims[0]; i++) {
       PyObject * row = PySequence_GetItem(object, i);
@@ -382,7 +406,6 @@ recursive_matlab_fill(PyObject * object,
       }
     }
   } else {
-
     // how many elements do we skip ahead?
     size_t elements_per = 1;
     for (size_t i = 0; i < num_dims - 1; i++) {
@@ -393,8 +416,8 @@ recursive_matlab_fill(PyObject * object,
     for (size_t i = 0; i < dims[num_dims - 1]; i++) {
       // get the new tuple
       PyObject * subtuple = PySequence_GetItem(object, i);
-      // what is the new matlab data?
-      double * const new_data = data + elements_per * i; // shift to the data we want
+      // what is the new matlab data? shift to the data we want
+      double * const new_data = data + elements_per * i;
       // recurse
       recursive_matlab_fill(subtuple, new_data, num_dims - 1, dims);
     }
@@ -485,7 +508,7 @@ verify_matrix(PyObject * object, const mwSize num_dims, const mwSize * const dim
       return false;
     }
     // this is a sequence of numbers, check the type
-    for (size_t i = 0; i < dims[0]; i ++) {
+    for (size_t i = 0; i < dims[0]; i++) {
       PyObject * subtuple = PySequence_GetItem(object, i);
       if (PySequence_Length(subtuple) != dims[1]) {
         return false;
@@ -504,7 +527,7 @@ verify_matrix(PyObject * object, const mwSize num_dims, const mwSize * const dim
     }
     // this is a sequence of sequences, check all sub sequences
     result = true;
-    for (size_t i = 0; i < dims[num_dims - 1]; i ++) {
+    for (size_t i = 0; i < dims[num_dims - 1]; i++) {
       element = PySequence_GetItem(object, i);
       result = result && verify_matrix(element, num_dims - 1, dims);
     }
@@ -566,11 +589,11 @@ matlab_push(PyObject * self, PyObject * args)
 
       // TODO unhack this...
       if (PySequence_Check(object) && !PyString_Check(object)) {
-        // verify the matrix
-        guess_dims(object, all_num_dims[j], all_dims[j]);  // allocates dims with new []
-        //for (int x = 0; x < all_num_dims[j]; x++) {
-        // mexPrintf("-> %d\n", all_dims[j][x]);
-        //}
+        // verify the matrix, allocates dims with new []
+        guess_dims(object, all_num_dims[j], all_dims[j]);
+        // for (int x = 0; x < all_num_dims[j]; x++) {
+        //   mexPrintf("-> %d\n", all_dims[j][x]);
+        // }
         if (!verify_matrix(object, all_num_dims[j], all_dims[j])) {
           PyErr_SetString(PyExc_TypeError, "variables must be reformable to matrices");
           throw 0;
@@ -747,7 +770,8 @@ mexFunction(int nlhs, mxArray * plhs[ ], int nrhs, const mxArray * prhs[ ])
 
   // test if input is cell of strings
   if (mxIsCell(prhs[0])) {
-    if (mxGetNumberOfDimensions(prhs[0]) == 2 && (mxGetDimensions(prhs[0])[0] == 1 || mxGetDimensions(prhs[0])[1] == 1)) {
+    if (mxGetNumberOfDimensions(prhs[0]) == 2 &&
+        (mxGetDimensions(prhs[0])[0] == 1 || mxGetDimensions(prhs[0])[1] == 1)) {
       // make sure each element is a string
       size_t numel = mxGetNumberOfElements(prhs[0]);
       for (size_t i = 0; i < numel; i++) {
@@ -789,9 +813,10 @@ mexFunction(int nlhs, mxArray * plhs[ ], int nrhs, const mxArray * prhs[ ])
     // initialize the special matlab module
     matlab_module = Py_InitModule3("matlab", matlab_methods, "");
 
-    // add the matlab error exception
-    matlab_error = PyErr_NewException((char *) "matlab.error", NULL, NULL); // new reference
-    PyModule_AddObject(matlab_module, "error", matlab_error); // steals reference
+    // add the matlab error exception, new reference
+    matlab_error = PyErr_NewException((char *) "matlab.error", NULL, NULL);
+    // steals reference
+    PyModule_AddObject(matlab_module, "error", matlab_error);
   } else {
     // get the GIL
     PyEval_RestoreThread(thread_save);
