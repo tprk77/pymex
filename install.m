@@ -1,4 +1,4 @@
-function install(dir, libpython)
+function install(dir, libpython, compiler)
 % INSTALL(toolboxdir, libpython)
 %
 % Compile and install pymex.
@@ -24,7 +24,13 @@ function install(dir, libpython)
     end
     installdir = [toolboxdir, '/pymex/'];
 
-    mex_command = ['mex pymex.cpp -g -lpython2.6 -ldl -DLIBPYTHON=', libpython];
+    compiler_extra = '';
+    if exist('compiler', 'var')
+        % TODO still uses the wrong libraries, still gives warning
+        compiler_extra = ['CXX="', compiler, '" '];
+    end
+
+    mex_command = ['mex -v ', compiler_extra, 'pymex.cpp -g -lpython2.6 -ldl -DLIBPYTHON=', libpython];
 
     disp(' ');
     disp(' ');
@@ -44,7 +50,7 @@ function install(dir, libpython)
     disp('''help install.m'' to see usage.');
     disp(' ');
     disp(' ');
-    disp(' < Press a key to continue >');
+    disp(' < Press any key to continue >');
     disp(' ');
     disp(' ');
     pause;
