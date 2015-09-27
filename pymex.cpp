@@ -51,7 +51,7 @@ g++ pymex.cpp -o pymex.mexglx -I/opt/matlab/2009A/extern/include/       \
 #include <mex.h>
 #include <matrix.h>
 #include <string.h>
-#include <python2.6/Python.h>
+#include <python2.7/Python.h>
 
 #include <string>
 #include <vector>
@@ -61,7 +61,7 @@ g++ pymex.cpp -o pymex.mexglx -I/opt/matlab/2009A/extern/include/       \
 #ifdef LIBPYTHON
 #define LIBPYTHONSO QUOTEME(LIBPYTHON)
 #else
-#define LIBPYTHONSO "/usr/lib/libpython2.6.so"
+#define LIBPYTHONSO "/usr/lib/libpython2.7.so"
 #endif
 
 static PyThreadState * thread_save;

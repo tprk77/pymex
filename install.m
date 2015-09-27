@@ -30,7 +30,7 @@ function install(dir, libpython, compiler)
         compiler_extra = ['CXX="', compiler, '" '];
     end
 
-    mex_command = ['mex -v ', compiler_extra, 'pymex.cpp -g -lpython2.6 -ldl -DLIBPYTHON=', libpython];
+    mex_command = ['mex -v ', compiler_extra, 'pymex.cpp -g -lpython2.7 -ldl -DLIBPYTHON=', libpython];
 
     disp(' ');
     disp(' ');
