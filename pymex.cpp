@@ -38,30 +38,30 @@
  * the variable. Only numbers (int, long, float, etc) are supported for now.
  */
 
-/*
-Compile with:
-
-g++ pymex.cpp -o pymex.mexglx -I/opt/matlab/2009A/extern/include/       \
--Wl,-rpath-link,/opt/matlab/2009A/bin/glnx86 -L/opt/matlab/2009A/bin/glnx86 \
--lmx -lmex -lmat -lm -I/usr/include/python2.6 -I/usr/include/python2.6  \
--L/usr/lib/python2.6/config -lpthread -ldl -lutil -lm -lpython2.6 -rdynamic -shared
-*/
-
 #include <dlfcn.h>
 #include <mex.h>
 #include <matrix.h>
 #include <string.h>
-#include <python2.7/Python.h>
+#include <Python.h>
+
+/*
+ * Note that there will be some weird format errors generated in the Python header. This is because
+ * Matlab's Mex header uses the preprocessor to redefine printf to mexPrintf. This causes problems
+ * with GCC's __attribute__ format, which Python uses.
+ *
+ * The Python header contains something like `__attribute__((format(printf, 1, 2)))` which is
+ * getting turned into the non-sensical `__attribute__((format(mexPrintf, 1, 2)))`.
+ */
 
 #include <string>
 #include <vector>
 
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
-#ifdef LIBPYTHON
-#define LIBPYTHONSO QUOTEME(LIBPYTHON)
+#ifdef PYTHON_LIB
+#define LIBPYTHONSO QUOTEME(PYTHON_LIB)
 #else
-#define LIBPYTHONSO "/usr/lib/libpython2.7.so"
+#define LIBPYTHONSO "/usr/lib/x86_64-linux-gnu/libpython2.7.so"
 #endif
 
 static PyThreadState * thread_save;
